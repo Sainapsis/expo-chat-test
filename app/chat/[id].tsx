@@ -8,7 +8,7 @@ import { useState } from 'react';
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams();
-  const { messages } = useChatMessages(id);
+  const { messages, sendMessage } = useChatMessages(id);
   const [inputMessage, setInputMessage] = useState('');
 
   const renderMessage = ({ item }: { item: Message }) => (
@@ -19,9 +19,10 @@ export default function ChatScreen() {
   );
 
   const handleSendMessage = () => {
-    // Here you would typically send the message to your backend
-    console.log('Sending message:', inputMessage);
-    setInputMessage('');
+    if (inputMessage.trim()) {
+      sendMessage(inputMessage);
+      setInputMessage('');
+    }
   };
 
   return (
