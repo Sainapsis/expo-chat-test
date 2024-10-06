@@ -11,7 +11,6 @@ export function useChats() {
   const [chats, setChats] = useState<Chat[]>([]);
 
   useEffect(() => {
-    // Mocked data
     const mockedChats: Chat[] = [
       { id: '1', userName: 'Alice', lastMessage: 'Hey, how are you?', timestamp: '10:30 AM' },
       { id: '2', userName: 'Bob', lastMessage: 'Did you see the new movie?', timestamp: '9:45 AM' },

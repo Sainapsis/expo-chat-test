@@ -1,10 +1,16 @@
-import { StyleSheet, FlatList, SafeAreaView, Platform, StatusBar } from 'react-native';
+import { StyleSheet, FlatList, SafeAreaView, Platform, StatusBar, TouchableOpacity } from 'react-native';
 import { useChats } from '@/hooks/useChats';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
   const chats = useChats();
+  const router = useRouter();
+
+  const handleChatPress = (chatId: string) => {
+    router.push(`/chat/${chatId}`);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -14,11 +20,13 @@ export default function HomeScreen() {
           data={chats}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <ThemedView style={styles.chatItem}>
-              <ThemedText type="defaultSemiBold">{item.userName}</ThemedText>
-              <ThemedText>{item.lastMessage}</ThemedText>
-              <ThemedText style={styles.timestamp}>{item.timestamp}</ThemedText>
-            </ThemedView>
+            <TouchableOpacity onPress={() => handleChatPress(item.id)}>
+              <ThemedView style={styles.chatItem}>
+                <ThemedText type="defaultSemiBold">{item.userName}</ThemedText>
+                <ThemedText>{item.lastMessage}</ThemedText>
+                <ThemedText style={styles.timestamp}>{item.timestamp}</ThemedText>
+              </ThemedView>
+            </TouchableOpacity>
           )}
         />
       </ThemedView>
