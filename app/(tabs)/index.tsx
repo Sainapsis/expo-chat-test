@@ -4,7 +4,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useRouter } from 'expo-router';
 
-export default function HomeScreen() {
+export default function ChatList() {
   const chats = useChats();
   const router = useRouter();
 
