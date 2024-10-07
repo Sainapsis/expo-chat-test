@@ -65,8 +65,8 @@ export function useChatMessages(chatId: string) {
   // Subscribe to new messages
   useSubscription(NEW_MESSAGE_SUBSCRIPTION, {
     variables: { chatId },
-    onSubscriptionData: ({ subscriptionData }) => {
-      const newMessage = subscriptionData.data.newMessage;
+    onData: ({ data }) => {
+      const newMessage = data.data.newMessage;
       addMessageToDb(newMessage, true);
     },
   });
