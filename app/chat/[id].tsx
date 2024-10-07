@@ -8,11 +8,14 @@ import { useState } from 'react';
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams();
-  const { messages, sendMessage } = useChatMessages(id);
+  const { messages, sendMessage, currentUserName } = useChatMessages(id);
   const [inputMessage, setInputMessage] = useState('');
 
   const renderMessage = ({ item }: { item: Message }) => (
-    <ThemedView style={styles.messageContainer}>
+    <ThemedView style={[
+      styles.messageContainer,
+      item.senderName === currentUserName ? styles.sentMessage : styles.receivedMessage
+    ]}>
       <ThemedText style={styles.sender}>{item.senderName}</ThemedText>
       <ThemedText>{item.body}</ThemedText>
     </ThemedView>
@@ -106,5 +109,13 @@ const styles = StyleSheet.create({
   sendButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  sentMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#DCF8C6',
+  },
+  receivedMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
   },
 });
