@@ -8,7 +8,8 @@ import { useState } from 'react';
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams();
-  const { messages, sendMessage, currentUserName } = useChatMessages(id);
+  const chatId = Array.isArray(id) ? id[0] : id;
+  const { messages, sendMessage, currentUserName } = useChatMessages(chatId);
   const [inputMessage, setInputMessage] = useState('');
 
   const renderMessage = ({ item }: { item: Message }) => (
@@ -41,6 +42,7 @@ export default function ChatScreen() {
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
+          inverted
         />
         <ThemedView style={styles.inputContainer}>
           <TextInput
@@ -72,6 +74,8 @@ const styles = StyleSheet.create({
   },
   messageList: {
     paddingHorizontal: 16,
+    flexGrow: 1,
+    justifyContent: 'flex-end',
   },
   messageContainer: {
     padding: 8,
