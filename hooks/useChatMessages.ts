@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { Message } from '@/types/chat';
 import * as SQLite from 'expo-sqlite';
 import { gql, useSubscription, useMutation } from '@apollo/client';
-import { useSocket } from '@/hooks/useSocket';
 
-const db = SQLite.openDatabase('chat.db');
+// Change this line to use openDatabaseAsync
+const db = SQLite.openDatabaseAsync('chat.db');
 
 const NEW_MESSAGE_SUBSCRIPTION = gql`
   subscription NewMessage($chatId: ID!) {
@@ -30,28 +30,32 @@ const SEND_MESSAGE_MUTATION = gql`
 
 export function useChatMessages(chatId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const socket = useSocket();
 
   // Initialize database
   useEffect(() => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, chatId TEXT, senderName TEXT, body TEXT, timestamp TEXT, synced INTEGER)'
-      );
-    });
+    const createTable = async () => {
+      try {
+        const database = await db;
+        await database.execAsync(
+          'CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, chatId TEXT, senderName TEXT, body TEXT, timestamp TEXT, synced INTEGER)'
+        );
+        console.log('Table created successfully');
+      } catch (error) {
+        console.error('Error creating table:', error);
+      }
+    };
+
+    createTable();
   }, []);
 
   // Load messages from SQLite
-  const loadMessages = useCallback(() => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'SELECT * FROM messages WHERE chatId = ? ORDER BY timestamp DESC',
-        [chatId],
-        (_, { rows }) => {
-          setMessages(rows._array);
-        }
-      );
-    });
+  const loadMessages = useCallback(async () => {
+    const database = await db;
+    const result = await database.getAllAsync<Message>(
+      'SELECT * FROM messages WHERE chatId = ? ORDER BY timestamp DESC',
+      [chatId]
+    );
+    setMessages(result);
   }, [chatId]);
 
   useEffect(() => {
@@ -71,16 +75,13 @@ export function useChatMessages(chatId: string) {
   const [sendMessageMutation] = useMutation(SEND_MESSAGE_MUTATION);
 
   // Add message to SQLite database
-  const addMessageToDb = useCallback((message: Message, synced: boolean) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'INSERT OR REPLACE INTO messages (id, chatId, senderName, body, timestamp, synced) VALUES (?, ?, ?, ?, ?, ?)',
-        [message.id, chatId, message.senderName, message.body, message.timestamp, synced ? 1 : 0],
-        () => {
-          loadMessages();
-        }
-      );
-    });
+  const addMessageToDb = useCallback(async (message: Message, synced: boolean) => {
+    const database = await db;
+    await database.runAsync(
+      'INSERT OR REPLACE INTO messages (id, chatId, senderName, body, timestamp, synced) VALUES (?, ?, ?, ?, ?, ?)',
+      [message.id, chatId, message.senderName, message.body, message.timestamp, synced ? 1 : 0]
+    );
+    await loadMessages();
   }, [chatId, loadMessages]);
 
   // Send message function
@@ -90,6 +91,7 @@ export function useChatMessages(chatId: string) {
       senderName: 'Me', // Replace with actual user name
       body,
       timestamp: new Date().toISOString(),
+      synced: false
     };
 
     // Add message optimistically
@@ -111,46 +113,25 @@ export function useChatMessages(chatId: string) {
   // Sync unsent messages
   useEffect(() => {
     const syncUnsentMessages = async () => {
-      db.transaction(tx => {
-        tx.executeSql(
-          'SELECT * FROM messages WHERE chatId = ? AND synced = 0',
-          [chatId],
-          async (_, { rows }) => {
-            for (let i = 0; i < rows.length; i++) {
-              const message = rows.item(i);
-              try {
-                const { data } = await sendMessageMutation({
-                  variables: { chatId, body: message.body },
-                });
-                addMessageToDb(data.sendMessage, true);
-              } catch (error) {
-                console.error('Failed to sync message:', error);
-              }
-            }
-          }
-        );
-      });
+      const database = await db;
+      const unsentMessages = await database.getAllAsync<Message>(
+        'SELECT * FROM messages WHERE chatId = ? AND synced = 0',
+        [chatId]
+      );
+      for (const message of unsentMessages) {
+        try {
+          const { data } = await sendMessageMutation({
+            variables: { chatId, body: message.body },
+          });
+          await addMessageToDb(data.sendMessage, true);
+        } catch (error) {
+          console.error('Failed to sync message:', error);
+        }
+      }
     };
 
     syncUnsentMessages();
   }, [chatId, sendMessageMutation, addMessageToDb]);
-
-  // Listen for real-time updates via socket
-  useEffect(() => {
-    if (socket) {
-      socket.on('new_message', (message: Message) => {
-        if (message.chatId === chatId) {
-          addMessageToDb(message, true);
-        }
-      });
-    }
-
-    return () => {
-      if (socket) {
-        socket.off('new_message');
-      }
-    };
-  }, [socket, chatId, addMessageToDb]);
 
   return { messages, sendMessage };
 }
