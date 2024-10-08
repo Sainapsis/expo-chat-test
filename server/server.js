@@ -17,9 +17,17 @@ const typeDefs = gql`
     timestamp: String!
   }
 
+  type Chat {
+    id: ID!
+    users: [User!]!
+    lastMessage: String
+    timestamp: String
+  }
+
   type Query {
     messages(chatId: ID!): [Message!]!
     availableUsers: [User!]!
+    chats(userId: ID!): [Chat!]!
   }
 
   type Mutation {
@@ -40,12 +48,29 @@ const users = [
   { id: '2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?img=2' },
   { id: '3', name: 'Charlie', avatar: 'https://i.pravatar.cc/150?img=3' },
   { id: '4', name: 'Diana', avatar: 'https://i.pravatar.cc/150?img=4' },
+  { id: '5', name: 'Ethan', avatar: 'https://i.pravatar.cc/150?img=5' },
+];
+
+const chats = [
+  { id: '1', users: ['1', '2'], lastMessage: 'Hey, how are you?', timestamp: '10:30 AM' },
+  { id: '2', users: ['1', '3', '4'], lastMessage: 'Meeting at 2 PM today', timestamp: 'Yesterday' },
+  { id: '3', users: ['1', '5'], lastMessage: 'Let\'s catch up soon', timestamp: '2 days ago' },
+  { id: '4', users: ['2', '3'], lastMessage: 'Did you see the new movie?', timestamp: '9:45 AM' },
+  { id: '5', users: ['4', '5'], lastMessage: 'Thanks for your help!', timestamp: 'Yesterday' },
 ];
 
 const resolvers = {
   Query: {
     messages: (_, { chatId }) => messages.filter(message => message.chatId === chatId),
     availableUsers: () => users,
+    chats: (_, { userId }) => {
+      return chats
+        .filter(chat => chat.users.includes(userId))
+        .map(chat => ({
+          ...chat,
+          users: chat.users.map(id => users.find(user => user.id === id)),
+        }));
+    },
   },
   Mutation: {
     sendMessage: (_, { chatId, body }) => {

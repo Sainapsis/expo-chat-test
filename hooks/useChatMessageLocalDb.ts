@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import * as SQLite from 'expo-sqlite';
-import { Message } from '@/types/chat';
+import { Message } from '@/types/types';
 
 const db = SQLite.openDatabaseAsync('chat.db');
 

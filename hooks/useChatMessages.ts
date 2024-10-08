@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Message } from '@/types/chat';
+import { Message } from '@/types/types';
 import { useChatMessageLocalDb } from './useChatMessageLocalDb';
 import { useChatMessageServerSync } from './useChatMessageServerSync';
 import { useChatMessageSubscription } from './useChatMessageSubscription';

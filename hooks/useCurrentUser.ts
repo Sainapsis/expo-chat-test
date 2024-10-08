@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, gql } from '@apollo/client';
-import { User } from '@/types/user';
+import { User } from '@/types/types';
 
 const GET_AVAILABLE_USERS = gql`
   query GetAvailableUsers {

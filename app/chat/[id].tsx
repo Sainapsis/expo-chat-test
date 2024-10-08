@@ -3,7 +3,7 @@ import { StyleSheet, SafeAreaView, FlatList, KeyboardAvoidingView, Platform, Tex
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useChatMessages } from '@/hooks/useChatMessages';
-import { Message } from '@/types/chat';
+import { Message } from '@/types/types';
 import { useState } from 'react';
 
 export default function ChatScreen() {

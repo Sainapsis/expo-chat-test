@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useMutation } from '@apollo/client';
 import { SEND_MESSAGE_MUTATION } from '@/graphql/mutations';
 import { useChatMessageLocalDb } from './useChatMessageLocalDb';
-import { Message } from '@/types/chat';
+import { Message } from '@/types/types';
 export function useChatMessageServerSync(chatId: string) {
   const [sendMessageMutation] = useMutation(SEND_MESSAGE_MUTATION);
   const { getUnsyncedMessages, addMessageToDb } = useChatMessageLocalDb(chatId);

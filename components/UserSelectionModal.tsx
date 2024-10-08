@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, View, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
-import { User } from '@/types/user';
+import { User } from '@/types/types';
 
 type Props = {
   isVisible: boolean;
