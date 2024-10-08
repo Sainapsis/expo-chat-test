@@ -3,6 +3,12 @@ const { ApolloServer, gql } = require('apollo-server-express');
 
 // Define your GraphQL schema
 const typeDefs = gql`
+  type User {
+    id: ID!
+    name: String!
+    avatar: String!
+  }
+
   type Message {
     id: ID!
     chatId: ID!
@@ -13,6 +19,7 @@ const typeDefs = gql`
 
   type Query {
     messages(chatId: ID!): [Message!]!
+    availableUsers: [User!]!
   }
 
   type Mutation {
@@ -28,9 +35,17 @@ const typeDefs = gql`
 const messages = [];
 
 // Define your resolvers
+const users = [
+  { id: '1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?img=1' },
+  { id: '2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?img=2' },
+  { id: '3', name: 'Charlie', avatar: 'https://i.pravatar.cc/150?img=3' },
+  { id: '4', name: 'Diana', avatar: 'https://i.pravatar.cc/150?img=4' },
+];
+
 const resolvers = {
   Query: {
     messages: (_, { chatId }) => messages.filter(message => message.chatId === chatId),
+    availableUsers: () => users,
   },
   Mutation: {
     sendMessage: (_, { chatId, body }) => {

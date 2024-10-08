@@ -1,14 +1,26 @@
 import { useState, useEffect } from 'react';
+import { useQuery, gql } from '@apollo/client';
+
+const GET_AVAILABLE_USERS = gql`
+  query GetAvailableUsers {
+    availableUsers {
+      id
+      name
+      avatar
+    }
+  }
+`;
 
 export function useCurrentUser() {
-  const [currentUserName, setCurrentUserName] = useState('Me');
+  const [currentUser, setCurrentUser] = useState({ id: '1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?img=1' });
+  const { data } = useQuery(GET_AVAILABLE_USERS);
 
-  // TODO: Implement logic to fetch the current user's name from the server
-  useEffect(() => {
-    // Fetch current user's name from the server
-    // For now, we'll use a placeholder
-    setCurrentUserName('Me');
-  }, []);
+  const changeUser = (userId: string) => {
+    const newUser = data?.availableUsers.find(user => user.id === userId);
+    if (newUser) {
+      setCurrentUser(newUser);
+    }
+  };
 
-  return { currentUserName, setCurrentUserName };
+  return { currentUser, changeUser, availableUsers: data?.availableUsers || [] };
 }
