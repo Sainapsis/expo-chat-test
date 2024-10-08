@@ -3,6 +3,7 @@ import { useChats } from '@/hooks/useChats';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useRouter } from 'expo-router';
+import { User } from '@/types/user';
 
 export default function ChatList() {
   const chats = useChats();
@@ -22,7 +23,7 @@ export default function ChatList() {
           renderItem={({ item }) => (
             <TouchableOpacity onPress={() => handleChatPress(item.id)}>
               <ThemedView style={styles.chatItem}>
-                <ThemedText type="defaultSemiBold">{item.userName}</ThemedText>
+                <ThemedText type="defaultSemiBold">{item.user.name}</ThemedText>
                 <ThemedText>{item.lastMessage}</ThemedText>
                 <ThemedText style={styles.timestamp}>{item.timestamp}</ThemedText>
               </ThemedView>
