@@ -17,13 +17,14 @@ export function useChatMessages(chatId: string) {
   }, [initializeChatTable, loadMessages]);
 
   useEffect(() => {
-    const unsubscribe = subscribeToNewMessages(async (newMessage) => {
+    const handleNewMessage = async (newMessage: Message) => {
       if (newMessage.senderName !== currentUserName) {
         await addMessageToDb(newMessage, true);
         setMessages(await loadMessages());
       }
-    });
-    return unsubscribe;
+    };
+
+    subscribeToNewMessages(handleNewMessage);
   }, [subscribeToNewMessages, currentUserName, addMessageToDb, loadMessages]);
 
   useEffect(() => {
