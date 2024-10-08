@@ -9,13 +9,13 @@ import { useState } from 'react';
 export default function ChatScreen() {
   const { id } = useLocalSearchParams();
   const chatId = Array.isArray(id) ? id[0] : id;
-  const { messages, sendMessage, currentUserName } = useChatMessages(chatId);
+  const { messages, sendMessage, currentUser } = useChatMessages(chatId);
   const [inputMessage, setInputMessage] = useState('');
 
   const renderMessage = ({ item }: { item: Message }) => (
     <ThemedView style={[
       styles.messageContainer,
-      item.senderName === currentUserName ? styles.sentMessage : styles.receivedMessage
+      item.senderName === currentUser.name ? styles.sentMessage : styles.receivedMessage
     ]}>
       <ThemedText style={styles.sender}>{item.senderName}</ThemedText>
       <ThemedText>{item.body}</ThemedText>

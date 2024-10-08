@@ -10,7 +10,7 @@ export function useChatMessages(chatId: string) {
   const { loadMessages, addMessageToDb, initializeChatTable } = useChatMessageLocalDb(chatId);
   const { syncUnsentMessages } = useChatMessageServerSync(chatId);
   const { subscribeToNewMessages } = useChatMessageSubscription(chatId);
-  const { currentUserName } = useCurrentUser();
+  const { currentUser } = useCurrentUser();
 
   useEffect(() => {
     initializeChatTable().then(() => loadMessages().then(setMessages));
@@ -18,14 +18,14 @@ export function useChatMessages(chatId: string) {
 
   useEffect(() => {
     const handleNewMessage = async (newMessage: Message) => {
-      if (newMessage.senderName !== currentUserName) {
+      if (newMessage.senderName !== currentUser.name) {
         await addMessageToDb(newMessage, true);
         setMessages(await loadMessages());
       }
     };
 
     subscribeToNewMessages(handleNewMessage);
-  }, [subscribeToNewMessages, currentUserName, addMessageToDb, loadMessages]);
+  }, [subscribeToNewMessages, currentUser.name, addMessageToDb, loadMessages]);
 
   useEffect(() => {
     syncUnsentMessages();
@@ -34,14 +34,15 @@ export function useChatMessages(chatId: string) {
   const sendMessage = useCallback(async (body: string) => {
     const optimisticMessage: Message = {
       id: Date.now().toString(),
-      senderName: currentUserName,
+      senderId: currentUser.id, 
+      senderName: currentUser.name,
       body,
       timestamp: new Date().toISOString(),
       synced: false
     };
     await addMessageToDb(optimisticMessage, false);
     setMessages(await loadMessages());
-  }, [currentUserName, addMessageToDb, loadMessages]);
+  }, [currentUser, addMessageToDb, loadMessages]);
 
-  return { messages, sendMessage, currentUserName };
+  return { messages, sendMessage, currentUser };
 }
