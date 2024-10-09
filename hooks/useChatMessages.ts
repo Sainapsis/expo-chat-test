@@ -33,7 +33,7 @@ export function useChatMessages(chatId: string) {
 
   useEffect(() => {
     const unsubscribe = subscribeToNewMessages((newMessage: Message) => {
-      if (newMessage.sender.id !== currentUser.id) {
+      if (newMessage.senderId !== currentUser.id) {
         addMessageToDb(newMessage, true).then(() => {
           setMessages(prevMessages => [...prevMessages, newMessage]);
         });
@@ -54,7 +54,7 @@ export function useChatMessages(chatId: string) {
   const sendMessage = useCallback(async (body: string) => {
     const optimisticMessage: Message = {
       id: Date.now().toString(),
-      sender: currentUser,
+      senderId: currentUser.id,
       body,
       timestamp: new Date().toISOString(),
       synced: false,
