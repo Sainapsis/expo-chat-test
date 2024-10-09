@@ -13,7 +13,7 @@ const typeDefs = gql`
   type Message {
     id: ID!
     chatId: ID!
-    sender: User!
+    senderId: ID!
     body: String!
     timestamp: String!
   }
@@ -44,15 +44,12 @@ const resolvers = {
   Query: {
     messages: async (_, { chatId }) => {
       const messages = await db.all('SELECT * FROM messages WHERE chatId = ?', [chatId]);
-      return Promise.all(messages.map(async (message) => {
-        const user = await db.get('SELECT * FROM users WHERE id = ?', [message.senderName]);
-        return {
-          id: message.id.toString(), // Ensure id is a string
-          chatId: message.chatId,
-          sender: user,
-          body: message.body,
-          timestamp: message.timestamp,
-        };
+      return messages.map(message => ({
+        id: message.id.toString(),
+        chatId: message.chatId,
+        senderId: message.senderId,
+        body: message.body,
+        timestamp: message.timestamp,
       }));
     },
     availableUsers: async () => {
@@ -88,22 +85,17 @@ const resolvers = {
   Mutation: {
     sendMessage: async (_, { chatId, body }, { userId }) => {
       console.log('Received sendMessage request:', { chatId, body, userId });
-      const user = await db.get('SELECT * FROM users WHERE id = ?', [userId]);
-      if (!user) {
-        console.error('User not found:', userId);
-        throw new Error('User not found');
-      }
       const newMessage = {
         chatId,
-        sender: user,
+        senderId: userId,
         body,
         timestamp: new Date().toISOString(),
       };
       try {
-        const result = await db.run('INSERT INTO messages (chatId, senderName, body, timestamp) VALUES (?, ?, ?, ?)', 
-          [newMessage.chatId, newMessage.sender.id, newMessage.body, newMessage.timestamp]);
+        const result = await db.run('INSERT INTO messages (chatId, senderId, body, timestamp) VALUES (?, ?, ?, ?)', 
+          [newMessage.chatId, newMessage.senderId, newMessage.body, newMessage.timestamp]);
         console.log('Message inserted successfully');
-        newMessage.id = result.lastID.toString(); // Add the generated id to the newMessage object
+        newMessage.id = result.lastID.toString();
         return newMessage;
       } catch (error) {
         console.error('Error inserting message:', error);
@@ -139,7 +131,7 @@ async function initDatabase() {
     CREATE TABLE IF NOT EXISTS messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       chatId TEXT,
-      senderName TEXT,
+      senderId TEXT,
       body TEXT,
       timestamp TEXT
     );

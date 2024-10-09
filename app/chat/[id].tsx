@@ -3,6 +3,7 @@ import { StyleSheet, SafeAreaView, FlatList, KeyboardAvoidingView, Platform, Tex
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useChatMessages } from '@/hooks/useChatMessages';
+import { useUsers } from '@/hooks/useUsers';
 import { Message } from '@/types/types';
 import { useState } from 'react';
 
@@ -10,6 +11,7 @@ export default function ChatScreen() {
   const { id } = useLocalSearchParams();
   const chatId = Array.isArray(id) ? id[0] : id;
   const { messages, sendMessage, currentUser } = useChatMessages(chatId);
+  const { getUserName } = useUsers();
   const [inputMessage, setInputMessage] = useState('');
 
   const renderMessage = ({ item }: { item: Message | undefined }) => {
@@ -21,13 +23,13 @@ export default function ChatScreen() {
       );
     }
 
-    const senderName = item.sender?.name || 'Unknown';
+    const senderName = getUserName(item.senderId);
     const messageBody = item.body || 'No message content';
 
     return (
       <ThemedView style={[
         styles.messageContainer,
-        item.sender?.id === currentUser.id ? styles.sentMessage : styles.receivedMessage
+        item.senderId === currentUser.id ? styles.sentMessage : styles.receivedMessage
       ]}>
         <ThemedText style={styles.sender}>{senderName}</ThemedText>
         <ThemedText>{messageBody}</ThemedText>

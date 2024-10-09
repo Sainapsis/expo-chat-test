@@ -6,7 +6,7 @@ export interface User {
 
 export interface Message {
   id: string;
-  sender: User; 
+  senderId: string;
   body: string;
   timestamp: string;
   synced: boolean;

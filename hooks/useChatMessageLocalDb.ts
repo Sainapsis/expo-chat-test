@@ -8,7 +8,7 @@ export function useChatMessageLocalDb(chatId: string) {
   const initializeChatTable = useCallback(async () => {
     const database = await db;
     await database.execAsync(
-      'CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, chatId TEXT, senderName TEXT, body TEXT, timestamp TEXT, synced INTEGER)'
+      'CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, chatId TEXT, senderId TEXT, body TEXT, timestamp TEXT, synced INTEGER)'
     );
   }, [chatId]);
 
@@ -25,16 +25,16 @@ export function useChatMessageLocalDb(chatId: string) {
   const addMessageToDb = useCallback(async (message: Message, synced: boolean) => {
     const database = await db;
     await database.runAsync(
-      'INSERT OR REPLACE INTO messages (id, chatId, senderName, body, timestamp, synced) VALUES (?, ?, ?, ?, ?, ?)',
-      [message.id, chatId, message.sender.id, message.body, message.timestamp, synced ? 1 : 0]
+      'INSERT OR REPLACE INTO messages (id, chatId, senderId, body, timestamp, synced) VALUES (?, ?, ?, ?, ?, ?)',
+      [message.id, chatId, message.senderId, message.body, message.timestamp, synced ? 1 : 0]
     );
   }, [chatId]);
 
   const updateMessageInDb = useCallback(async (message: Message) => {
     const database = await db;
     await database.runAsync(
-      'UPDATE messages SET senderName = ?, body = ?, timestamp = ?, synced = ? WHERE id = ?',
-      [message.sender.id, message.body, message.timestamp, message.synced ? 1 : 0, message.id]
+      'UPDATE messages SET senderId = ?, body = ?, timestamp = ?, synced = ? WHERE id = ?',
+      [message.senderId, message.body, message.timestamp, message.synced ? 1 : 0, message.id]
     );
   }, [chatId]);
 
