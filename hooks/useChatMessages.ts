@@ -15,11 +15,8 @@ export function useChatMessages(chatId: string) {
   const { currentUser } = useCurrentUser();
 
   useEffect(() => {
-    console.log('Initializing chat table and loading messages for chatId:', chatId);
     initializeChatTable().then(async () => {
-      console.log('Chat table initialized');
       if (TRUNCATE_LOCAL_DB_MESSAGES_ON_ENTER) {
-        console.log('Truncating messages before loading');
         await truncateMessages();
       }
       loadMessages().then(loadedMessages => {
@@ -52,12 +49,13 @@ export function useChatMessages(chatId: string) {
     const optimisticMessage: Message = {
       id: Date.now().toString(),
       senderId: currentUser.id,
+      chatId: chatId,
       body,
       timestamp: new Date().toISOString(),
       synced: false,
     };
     await addMessageToDb(optimisticMessage, false);
-    setMessages(prevMessages => [...prevMessages, optimisticMessage]);
+    setMessages(prevMessages => [optimisticMessage,...prevMessages]);
     await syncUnsentMessages();
   }, [currentUser, addMessageToDb, syncUnsentMessages]);
 

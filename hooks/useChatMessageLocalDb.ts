@@ -13,10 +13,9 @@ export function useChatMessageLocalDb(chatId: string) {
     const versionResult = await database.getFirstAsync<{ user_version: number }>(
       'PRAGMA user_version'
     );
-    console.log('Database current version:', versionResult, versionResult);
     const currentVersion = versionResult?.user_version || 0;
     if (currentVersion < DB_VERSION) {
-      console.log('Migrating database from version', currentVersion, 'to', DB_VERSION);
+      console.warn('Migrating database from version', currentVersion, 'to', DB_VERSION);
         await database.execAsync('DROP TABLE IF EXISTS messages');
         await database.execAsync(`
           CREATE TABLE messages (
@@ -33,9 +32,9 @@ export function useChatMessageLocalDb(chatId: string) {
         const versionupdateResult = await database.getFirstAsync<{ version: number }>(
           'PRAGMA user_version'
         );
-        console.log('Database migrated from version', currentVersion, 'to', versionupdateResult);
+        console.info('Database migrated from version', currentVersion, 'to', versionupdateResult);
     }else{
-      console.log('Database is up to date:', currentVersion);
+      console.info('Database is up to date:', currentVersion);
     }
   }, []);
 
@@ -45,19 +44,16 @@ export function useChatMessageLocalDb(chatId: string) {
       'SELECT * FROM messages WHERE chatId = ? ORDER BY timestamp DESC',
       [chatId]
     );
-    console.log('Messages loaded from local db for chatId:', chatId, messages);
     return messages;
   }, [chatId]);
 
   const addMessageToDb = useCallback(async (message: Message, synced: boolean) => {
     const database = await db;
-    console.log('Adding message to local db:', message);
     try {
       const response = await database.runAsync(
         'INSERT OR REPLACE INTO messages (id, chatId, senderId, body, timestamp, synced) VALUES (?, ?, ?, ?, ?, ?)',
       [message.id, chatId, message.senderId, message.body, message.timestamp, synced ? 1 : 0]
       );
-      console.log('Message added to local db:', message, response);
     } catch (error) {
       console.error('Error adding message to local db:', error);
     }
@@ -81,7 +77,6 @@ export function useChatMessageLocalDb(chatId: string) {
 
   const getUnsyncedMessages = useCallback(async () => {
     const database = await db;
-    console.log('Getting unsynced messages for chatId:', chatId);
     return await database.getAllAsync<Message>(
       'SELECT * FROM messages WHERE chatId = ? AND synced = 0',
       [chatId]
@@ -89,10 +84,9 @@ export function useChatMessageLocalDb(chatId: string) {
   }, [chatId]);
 
   const truncateMessages = useCallback(async () => {
-    console.log('Truncating messages table for chatId:', chatId);
     const database = await db;
     await database.runAsync('DELETE FROM messages WHERE chatId = ?', [chatId]);
-    console.log('Messages table truncated for chatId:', chatId);
+    console.warn('Messages table truncated for chatId:', chatId);
   }, [chatId]);
 
   return { 

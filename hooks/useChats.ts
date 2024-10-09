@@ -16,12 +16,10 @@ export function useChats() {
   useEffect(() => {
     if (currentUser?.id) {
       refetch({ userId: currentUser.id });
-      console.info('refetching chats from useEffect for user:', currentUser.id);
     }
   }, [currentUser, refetch]);
 
   useEffect(() => {
-    console.info('useChats data:', data);
     if (data && data.chats) {
       setChats(data.chats);
     }
