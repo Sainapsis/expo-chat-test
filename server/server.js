@@ -1,7 +1,8 @@
 const express = require('express');
 const { ApolloServer, gql } = require('apollo-server-express');
+const sqlite3 = require('sqlite3').verbose();
+const { open } = require('sqlite');
 
-// Define your GraphQL schema
 const typeDefs = gql`
   type User {
     id: ID!
@@ -12,7 +13,7 @@ const typeDefs = gql`
   type Message {
     id: ID!
     chatId: ID!
-    senderName: String!
+    senderId: ID! 
     body: String!
     timestamp: String!
   }
@@ -39,49 +40,32 @@ const typeDefs = gql`
   }
 `;
 
-// In-memory storage for messages
-const messages = [];
-
-// Define your resolvers
-const users = [
-  { id: '1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?img=1' },
-  { id: '2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?img=2' },
-  { id: '3', name: 'Charlie', avatar: 'https://i.pravatar.cc/150?img=3' },
-  { id: '4', name: 'Diana', avatar: 'https://i.pravatar.cc/150?img=4' },
-  { id: '5', name: 'Ethan', avatar: 'https://i.pravatar.cc/150?img=5' },
-];
-
-const chats = [
-  { id: '1', users: ['1', '2'], lastMessage: 'Hey, how are you?', timestamp: '10:30 AM' },
-  { id: '2', users: ['1', '3', '4'], lastMessage: 'Meeting at 2 PM today', timestamp: 'Yesterday' },
-  { id: '3', users: ['1', '5'], lastMessage: 'Let\'s catch up soon', timestamp: '2 days ago' },
-  { id: '4', users: ['2', '3'], lastMessage: 'Did you see the new movie?', timestamp: '9:45 AM' },
-  { id: '5', users: ['4', '5'], lastMessage: 'Thanks for your help!', timestamp: 'Yesterday' },
-];
-
 const resolvers = {
   Query: {
-    messages: (_, { chatId }) => messages.filter(message => message.chatId === chatId),
-    availableUsers: () => users,
-    chats: (_, { userId }) => {
-      return chats
-        .filter(chat => chat.users.includes(userId))
-        .map(chat => ({
-          ...chat,
-          users: chat.users.map(id => users.find(user => user.id === id)),
-        }));
+    messages: async (_, { chatId }) => {
+      return await db.all('SELECT * FROM messages WHERE chatId = ?', [chatId]);
+    },
+    availableUsers: async () => {
+      return await db.all('SELECT * FROM users');
+    },
+    chats: async (_, { userId }) => {
+      const chatsData = await db.all('SELECT * FROM chats WHERE id IN (SELECT chatId FROM messages WHERE senderName = ?)', [userId]);
+      return chatsData.map(chat => ({
+        ...chat,
+        users: chat.users.map(id => db.get('SELECT * FROM users WHERE id = ?', [id])),
+      }));
     },
   },
   Mutation: {
-    sendMessage: (_, { chatId, body }) => {
+    sendMessage: async (_, { chatId, body, userId }) => {
       const newMessage = {
-        id: String(messages.length + 1),
         chatId,
-        senderName: 'User', // You can replace this with actual user authentication
+        senderId: userId,
         body,
         timestamp: new Date().toISOString(),
       };
-      messages.push(newMessage);
+      await db.run('INSERT INTO messages (chatId, senderId, body, timestamp) VALUES (?, ?, ?, ?)', 
+        [newMessage.chatId, newMessage.senderId, newMessage.body, newMessage.timestamp]);
       return newMessage;
     },
   },
@@ -92,7 +76,65 @@ const resolvers = {
   },
 };
 
+let db;
+
+async function initDatabase() {
+  db = await open({
+    filename: './database.db',
+    driver: sqlite3.Database
+  });
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      avatar TEXT
+    );
+    CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chatId TEXT,
+      senderName TEXT,
+      body TEXT,
+      timestamp TEXT
+    );
+    CREATE TABLE IF NOT EXISTS chats (
+      id TEXT PRIMARY KEY,
+      lastMessage TEXT,
+      timestamp TEXT
+    );
+  `);
+
+  await seedDatabase();
+}
+
+async function seedDatabase() {
+  const usersData = [
+    { id: '1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?img=1' },
+    { id: '2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?img=2' },
+    { id: '3', name: 'Charlie', avatar: 'https://i.pravatar.cc/150?img=3' },
+    { id: '4', name: 'Diana', avatar: 'https://i.pravatar.cc/150?img=4' },
+    { id: '5', name: 'Ethan', avatar: 'https://i.pravatar.cc/150?img=5' },
+  ];
+
+  const chatsData = [
+    { id: '1', lastMessage: 'Hey, how are you?', timestamp: '10:30 AM' },
+    { id: '2', lastMessage: 'Meeting at 2 PM today', timestamp: 'Yesterday' },
+    { id: '3', lastMessage: 'Let\'s catch up soon', timestamp: '2 days ago' },
+    { id: '4', lastMessage: 'Did you see the new movie?', timestamp: '9:45 AM' },
+    { id: '5', lastMessage: 'Thanks for your help!', timestamp: 'Yesterday' },
+  ];
+
+  for (const user of usersData) {
+    await db.run('INSERT OR IGNORE INTO users (id, name, avatar) VALUES (?, ?, ?)', [user.id, user.name, user.avatar]);
+  }
+
+  for (const chat of chatsData) {
+    await db.run('INSERT OR IGNORE INTO chats (id, lastMessage, timestamp) VALUES (?, ?, ?)', [chat.id, chat.lastMessage, chat.timestamp]);
+  }
+}
+
 async function startServer() {
+  await initDatabase(); 
   const app = express();
   const server = new ApolloServer({ typeDefs, resolvers });
 
