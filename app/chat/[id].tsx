@@ -12,17 +12,27 @@ export default function ChatScreen() {
   const { messages, sendMessage, currentUser } = useChatMessages(chatId);
   const [inputMessage, setInputMessage] = useState('');
 
+  const mockMessages = [{"body": "Tt", "chatId": "1", "id": "1728508715310", "senderName": "2", "synced": 1, "timestamp": "2024-10-09T21:18:35.310Z"}]
+
   const renderMessage = ({ item }: { item: Message | undefined }) => {
-    if (!item || !item.sender) {
-      return null; // TODO: improve this or return a placeholder component
+    if (!item) {
+      return (
+        <ThemedView style={styles.placeholderContainer}>
+          <ThemedText style={styles.placeholderText}>Message unavailable</ThemedText>
+        </ThemedView>
+      );
     }
+
+    const senderName = item.sender?.name || 'Unknown';
+    const messageBody = item.body || 'No message content';
+
     return (
       <ThemedView style={[
         styles.messageContainer,
-        item.sender.id === currentUser.id ? styles.sentMessage : styles.receivedMessage
+        item.sender?.id === currentUser.id ? styles.sentMessage : styles.receivedMessage
       ]}>
-        <ThemedText style={styles.sender}>{item.sender.name}</ThemedText>
-        <ThemedText>{item.body}</ThemedText>
+        <ThemedText style={styles.sender}>{senderName}</ThemedText>
+        <ThemedText>{messageBody}</ThemedText>
       </ThemedView>
     );
   };
@@ -43,7 +53,7 @@ export default function ChatScreen() {
       >
         <ThemedText type="title" style={styles.title}>Chat {id}</ThemedText>
         <FlatList
-          data={messages}
+          data={mockMessages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
@@ -126,5 +136,16 @@ const styles = StyleSheet.create({
   receivedMessage: {
     alignSelf: 'flex-start',
     backgroundColor: '#FFFFFF',
+  },
+  placeholderContainer: {
+    padding: 8,
+    marginBottom: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    alignSelf: 'center',
+  },
+  placeholderText: {
+    color: '#999',
+    fontStyle: 'italic',
   },
 });

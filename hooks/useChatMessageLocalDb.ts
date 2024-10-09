@@ -14,10 +14,12 @@ export function useChatMessageLocalDb(chatId: string) {
 
   const loadMessages = useCallback(async () => {
     const database = await db;
-    return await database.getAllAsync<Message>(
+    const messages = await database.getAllAsync<Message>(
       'SELECT * FROM messages WHERE chatId = ? ORDER BY timestamp DESC',
       [chatId]
     );
+    console.log('Messages loaded from local db for chatId:', chatId, messages);
+    return messages;
   }, [chatId]);
 
   const addMessageToDb = useCallback(async (message: Message, synced: boolean) => {
@@ -52,12 +54,20 @@ export function useChatMessageLocalDb(chatId: string) {
     );
   }, [chatId]);
 
+  const truncateMessages = useCallback(async () => {
+    console.log('Truncating messages table for chatId:', chatId);
+    const database = await db;
+    await database.runAsync('DELETE FROM messages WHERE chatId = ?', [chatId]);
+    console.log('Messages table truncated for chatId:', chatId);
+  }, [chatId]);
+
   return { 
     initializeChatTable, 
     loadMessages, 
     addMessageToDb, 
     updateMessageInDb, 
     getUnsyncedMessages,
-    updateMessageSyncStatus // Add this new function to the return object
+    updateMessageSyncStatus,
+    truncateMessages 
   };
 }

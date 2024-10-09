@@ -5,16 +5,31 @@ import { useChatMessageServerSync } from './useChatMessageServerSync';
 import { useChatMessageSubscription } from './useChatMessageSubscription';
 import { useCurrentUser } from './useCurrentUser';
 
+const TRUNCATE_LOCAL_DB_MESSAGES_ON_ENTER = false;
+
 export function useChatMessages(chatId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const { loadMessages, addMessageToDb, initializeChatTable } = useChatMessageLocalDb(chatId);
+  const { loadMessages, addMessageToDb, initializeChatTable, truncateMessages } = useChatMessageLocalDb(chatId);
   const { syncUnsentMessages } = useChatMessageServerSync(chatId);
   const { subscribeToNewMessages } = useChatMessageSubscription(chatId);
   const { currentUser } = useCurrentUser();
 
   useEffect(() => {
-    initializeChatTable().then(() => loadMessages().then(setMessages));
-  }, [initializeChatTable, loadMessages]);
+    console.log('Initializing chat table and loading messages for chatId:', chatId);
+    initializeChatTable().then(async () => {
+      console.log('Chat table initialized');
+      if (TRUNCATE_LOCAL_DB_MESSAGES_ON_ENTER) {
+        console.log('Truncating messages before loading');
+        await truncateMessages();
+      }
+      console.log('Now loading messages');
+      loadMessages().then(loadedMessages => {
+        console.log('Messages loaded:', loadedMessages);
+        setMessages(loadedMessages);
+        console.log('Messages state updated');
+      });
+    });
+  }, [initializeChatTable, loadMessages, truncateMessages]);
 
   useEffect(() => {
     const unsubscribe = subscribeToNewMessages((newMessage: Message) => {
