@@ -56,12 +56,30 @@ const resolvers = {
       return await db.all('SELECT * FROM users');
     },
     chats: async (_, { userId }) => {
-      const chatsData = await db.all('SELECT * FROM chats WHERE id IN (SELECT chatId FROM messages WHERE senderName = ?)', [userId]);
+      const chatsData = await db.all(`
+        SELECT c.id, c.lastMessage, c.timestamp, u.id AS userId, u.name, u.avatar
+        FROM chat_users cu
+        JOIN chats c ON cu.chatId = c.id
+        JOIN users u ON cu.userId = u.id
+        WHERE cu.userId = ?
+      `, [userId]);
       console.log('chatsData:', chatsData, 'userId:', userId);
-      return chatsData.map(chat => ({
-        ...chat,
-        users: chat.users.map(id => db.get('SELECT * FROM users WHERE id = ?', [id])),
-      }));
+
+      const groupedChats = chatsData.reduce((acc, chat) => {
+        const { id, lastMessage, timestamp, userId, name, avatar } = chat;
+        if (!acc[id]) {
+          acc[id] = {
+            id,
+            lastMessage,
+            timestamp,
+            users: [],
+          };
+        }
+        acc[id].users.push({ id: userId, name, avatar });
+        return acc;
+      }, {});
+
+      return Object.values(groupedChats);
     },
   },
   Mutation: {
@@ -111,6 +129,13 @@ async function initDatabase() {
       lastMessage TEXT,
       timestamp TEXT
     );
+    CREATE TABLE IF NOT EXISTS chat_users (
+      chatId TEXT,
+      userId TEXT,
+      PRIMARY KEY (chatId, userId),
+      FOREIGN KEY (chatId) REFERENCES chats(id),
+      FOREIGN KEY (userId) REFERENCES users(id)
+    );
   `);
 
   await seedDatabase();
@@ -133,6 +158,19 @@ async function seedDatabase() {
     { id: '5', lastMessage: 'Thanks for your help!', timestamp: 'Yesterday' },
   ];
 
+  const chatUsersData = [
+    { chatId: '1', userId: '1' },
+    { chatId: '1', userId: '2' },
+    { chatId: '2', userId: '1' },
+    { chatId: '2', userId: '3' },
+    { chatId: '3', userId: '2' },
+    { chatId: '3', userId: '4' },
+    { chatId: '4', userId: '1' },
+    { chatId: '4', userId: '5' },
+    { chatId: '5', userId: '3' },
+    { chatId: '5', userId: '4' },
+  ];
+
   for (const user of usersData) {
     await db.run('INSERT OR IGNORE INTO users (id, name, avatar) VALUES (?, ?, ?)', [user.id, user.name, user.avatar]);
   }
@@ -140,15 +178,19 @@ async function seedDatabase() {
   for (const chat of chatsData) {
     await db.run('INSERT OR IGNORE INTO chats (id, lastMessage, timestamp) VALUES (?, ?, ?)', [chat.id, chat.lastMessage, chat.timestamp]);
   }
+
+  for (const chatUser of chatUsersData) {
+    await db.run('INSERT OR IGNORE INTO chat_users (chatId, userId) VALUES (?, ?)', [chatUser.chatId, chatUser.userId]);
+  }
 }
 
 async function logTableContents() {
   const users = await db.all('SELECT * FROM users');
-  const messages = await db.all('SELECT * FROM messages');
+  const chat_users = await db.all('SELECT * FROM chat_users');
   const chats = await db.all('SELECT * FROM chats');
 
   console.log('Users:', users);
-  console.log('Messages:', messages);
+  console.log('chat_users:', chat_users);
   console.log('Chats:', chats);
 }
 
