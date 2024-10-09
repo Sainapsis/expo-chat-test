@@ -14,3 +14,13 @@ export const GET_CHATS = gql`
     }
   }
 `;
+
+export const GET_AVAILABLE_USERS = gql`
+  query GetAvailableUsers {
+    availableUsers {
+      id
+      name
+      avatar
+    }
+  }
+`;

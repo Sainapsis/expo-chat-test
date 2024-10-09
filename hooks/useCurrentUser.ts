@@ -1,16 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useQuery, gql } from '@apollo/client';
+import { useState } from 'react';
+import { useQuery } from '@apollo/client';
+import { GET_AVAILABLE_USERS } from '@/graphql/queries';
 import { User } from '@/types/types';
-
-const GET_AVAILABLE_USERS = gql`
-  query GetAvailableUsers {
-    availableUsers {
-      id
-      name
-      avatar
-    }
-  }
-`;
 
 export function useCurrentUser() {
   const [currentUser, setCurrentUser] = useState<User>({ id: '1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?img=1' });
