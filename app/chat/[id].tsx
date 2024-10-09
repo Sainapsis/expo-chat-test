@@ -12,8 +12,6 @@ export default function ChatScreen() {
   const { messages, sendMessage, currentUser } = useChatMessages(chatId);
   const [inputMessage, setInputMessage] = useState('');
 
-  const mockMessages = [{"body": "Tt", "chatId": "1", "id": "1728508715310", "senderName": "2", "synced": 1, "timestamp": "2024-10-09T21:18:35.310Z"}]
-
   const renderMessage = ({ item }: { item: Message | undefined }) => {
     if (!item) {
       return (
@@ -53,7 +51,7 @@ export default function ChatScreen() {
       >
         <ThemedText type="title" style={styles.title}>Chat {id}</ThemedText>
         <FlatList
-          data={mockMessages}
+          data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
