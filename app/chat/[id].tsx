@@ -3,25 +3,30 @@ import { StyleSheet, SafeAreaView, FlatList, KeyboardAvoidingView, Platform, Tex
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useChatMessages } from '@/hooks/useChatMessages';
-import { Message } from '@/types/chat';
+import { Message } from '@/types/types';
 import { useState } from 'react';
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams();
-  const { messages } = useChatMessages(id);
+  const chatId = Array.isArray(id) ? id[0] : id;
+  const { messages, sendMessage, currentUser } = useChatMessages(chatId);
   const [inputMessage, setInputMessage] = useState('');
 
   const renderMessage = ({ item }: { item: Message }) => (
-    <ThemedView style={styles.messageContainer}>
+    <ThemedView style={[
+      styles.messageContainer,
+      item.senderName === currentUser.name ? styles.sentMessage : styles.receivedMessage
+    ]}>
       <ThemedText style={styles.sender}>{item.senderName}</ThemedText>
       <ThemedText>{item.body}</ThemedText>
     </ThemedView>
   );
 
   const handleSendMessage = () => {
-    // Here you would typically send the message to your backend
-    console.log('Sending message:', inputMessage);
-    setInputMessage('');
+    if (inputMessage.trim()) {
+      sendMessage(inputMessage);
+      setInputMessage('');
+    }
   };
 
   return (
@@ -37,6 +42,7 @@ export default function ChatScreen() {
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
+          inverted
         />
         <ThemedView style={styles.inputContainer}>
           <TextInput
@@ -68,6 +74,8 @@ const styles = StyleSheet.create({
   },
   messageList: {
     paddingHorizontal: 16,
+    flexGrow: 1,
+    justifyContent: 'flex-end',
   },
   messageContainer: {
     padding: 8,
@@ -105,5 +113,13 @@ const styles = StyleSheet.create({
   sendButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  sentMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#DCF8C6',
+  },
+  receivedMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
   },
 });

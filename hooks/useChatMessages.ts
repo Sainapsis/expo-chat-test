@@ -1,22 +1,48 @@
-import { useState, useEffect } from 'react';
-import { Message } from '@/types/chat';
+import { useState, useEffect, useCallback } from 'react';
+import { Message } from '@/types/types';
+import { useChatMessageLocalDb } from './useChatMessageLocalDb';
+import { useChatMessageServerSync } from './useChatMessageServerSync';
+import { useChatMessageSubscription } from './useChatMessageSubscription';
+import { useCurrentUser } from './useCurrentUser';
 
-export function useChatMessages(chatId: string | string[]) {
+export function useChatMessages(chatId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const { loadMessages, addMessageToDb, initializeChatTable } = useChatMessageLocalDb(chatId);
+  const { syncUnsentMessages } = useChatMessageServerSync(chatId);
+  const { subscribeToNewMessages } = useChatMessageSubscription(chatId);
+  const { currentUser } = useCurrentUser();
 
   useEffect(() => {
-    const mockMessages: Message[] = [
-      { id: '1', senderName: 'Alice', body: 'Hey there!' },
-      { id: '2', senderName: 'Bob', body: 'Hi Alice, how are you?' },
-      { id: '3', senderName: 'Alice', body: 'Im doing great, thanks for asking!' },
-      { id: '4', senderName: 'Bob', body: 'Thats wonderful to hear!' },
-    ];
+    initializeChatTable().then(() => loadMessages().then(setMessages));
+  }, [initializeChatTable, loadMessages]);
 
-    // Simulate API delay
-    setTimeout(() => {
-      setMessages(mockMessages);
-    }, 500);
-  }, [chatId]);
+  useEffect(() => {
+    const handleNewMessage = async (newMessage: Message) => {
+      if (newMessage.senderName !== currentUser.name) {
+        await addMessageToDb(newMessage, true);
+        setMessages(await loadMessages());
+      }
+    };
 
-  return { messages };
+    subscribeToNewMessages(handleNewMessage);
+  }, [subscribeToNewMessages, currentUser.name, addMessageToDb, loadMessages]);
+
+  useEffect(() => {
+    syncUnsentMessages();
+  }, [syncUnsentMessages]);
+
+  const sendMessage = useCallback(async (body: string) => {
+    const optimisticMessage: Message = {
+      id: Date.now().toString(),
+      senderId: currentUser.id, 
+      senderName: currentUser.name,
+      body,
+      timestamp: new Date().toISOString(),
+      synced: false
+    };
+    await addMessageToDb(optimisticMessage, false);
+    setMessages(await loadMessages());
+  }, [currentUser, addMessageToDb, loadMessages]);
+
+  return { messages, sendMessage, currentUser };
 }

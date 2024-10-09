@@ -1,26 +1,30 @@
 import { useState, useEffect } from 'react';
-
-interface Chat {
-  id: string;
-  userName: string;
-  lastMessage: string;
-  timestamp: string;
-}
+import { useQuery } from '@apollo/client';
+import { GET_CHATS } from '@/graphql/queries';
+import { useCurrentUserStore } from '@/store/useCurrentUserStore';
+import { ChatListResponse, ChatItem } from '@/types/types';
 
 export function useChats() {
-  const [chats, setChats] = useState<Chat[]>([]);
+  const { currentUser } = useCurrentUserStore();
+  const { data, loading, error, refetch } = useQuery<ChatListResponse>(GET_CHATS, {
+    variables: { userId: currentUser?.id },
+    skip: !currentUser?.id,
+  });
+
+  const [chats, setChats] = useState<ChatItem[]>([]);
 
   useEffect(() => {
-    const mockedChats: Chat[] = [
-      { id: '1', userName: 'Alice', lastMessage: 'Hey, how are you?', timestamp: '10:30 AM' },
-      { id: '2', userName: 'Bob', lastMessage: 'Did you see the new movie?', timestamp: '9:45 AM' },
-      { id: '3', userName: 'Charlie', lastMessage: 'Meeting at 2 PM today', timestamp: 'Yesterday' },
-      { id: '4', userName: 'Diana', lastMessage: 'Thanks for your help!', timestamp: 'Yesterday' },
-      { id: '5', userName: 'Ethan', lastMessage: 'Let\'s catch up soon', timestamp: '2 days ago' },
-    ];
+    if (currentUser?.id) {
+      refetch({ userId: currentUser.id });
+      console.info('refetching chats from useEffect for user:', currentUser.id);
+    }
+  }, [currentUser, refetch]);
 
-    setChats(mockedChats);
-  }, []);
+  useEffect(() => {
+    if (data && data.chats) {
+      setChats(data.chats);
+    }
+  }, [data]);
 
-  return chats;
+  return { chats, loading, error };
 }

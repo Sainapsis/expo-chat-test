@@ -3,27 +3,33 @@ import { useChats } from '@/hooks/useChats';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useRouter } from 'expo-router';
+import { ChatItem } from '@/types/types';
+import { useCurrentUserStore } from '@/store/useCurrentUserStore';
 
 export default function ChatList() {
-  const chats = useChats();
+  const { currentUser } = useCurrentUserStore();
+  const { chats, loading, error } = useChats();
   const router = useRouter();
 
   const handleChatPress = (chatId: string) => {
     router.push(`/chat/${chatId}`);
   };
 
+  if (loading) return <ThemedText>Loading...</ThemedText>;
+  if (error) return <ThemedText>Error: {error.message}</ThemedText>;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ThemedView style={styles.container}>
-        <ThemedText type="title" style={styles.title}>Chats</ThemedText>
-        <FlatList
+        <ThemedText type="title" style={styles.title}>Chats from {currentUser.name}</ThemedText>
+        <FlatList<ChatItem>
           data={chats}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={() => handleChatPress(item.id)}>
               <ThemedView style={styles.chatItem}>
-                <ThemedText type="defaultSemiBold">{item.userName}</ThemedText>
-                <ThemedText>{item.lastMessage}</ThemedText>
+                <ThemedText type="defaultSemiBold">{item.users.map(user => user.name).join(', ')}</ThemedText>
+                <ThemedText>{item.lastMessage.body}</ThemedText>
                 <ThemedText style={styles.timestamp}>{item.timestamp}</ThemedText>
               </ThemedView>
             </TouchableOpacity>

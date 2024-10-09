@@ -5,6 +5,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { useColorScheme } from 'react-native';
+import { ApolloProvider } from '@apollo/client';
+import { client } from './apollo';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -26,18 +28,20 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen 
-          name="chat/[id]" 
-          options={{ 
-            headerShown: true,
-            headerTitle: 'Chat',
-            headerBackTitle: 'Chats'
-          }} 
-        />
-      </Stack>
-    </ThemeProvider>
+    <ApolloProvider client={client}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen 
+            name="chat/[id]" 
+            options={{ 
+              headerShown: true,
+              headerTitle: 'Chat',
+              headerBackTitle: 'Chats'
+            }} 
+          />
+        </Stack>
+      </ThemeProvider>
+    </ApolloProvider>
   );
 }
