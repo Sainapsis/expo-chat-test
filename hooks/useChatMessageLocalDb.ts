@@ -24,7 +24,7 @@ export function useChatMessageLocalDb(chatId: string) {
     const database = await db;
     await database.runAsync(
       'INSERT OR REPLACE INTO messages (id, chatId, senderName, body, timestamp, synced) VALUES (?, ?, ?, ?, ?, ?)',
-      [message.id, chatId, message.senderName, message.body, message.timestamp, synced ? 1 : 0]
+      [message.id, chatId, message.sender.id, message.body, message.timestamp, synced ? 1 : 0]
     );
   }, [chatId]);
 
@@ -32,7 +32,7 @@ export function useChatMessageLocalDb(chatId: string) {
     const database = await db;
     await database.runAsync(
       'UPDATE messages SET senderName = ?, body = ?, timestamp = ?, synced = ? WHERE id = ?',
-      [message.senderName, message.body, message.timestamp, message.synced ? 1 : 0, message.id]
+      [message.sender.id, message.body, message.timestamp, message.synced ? 1 : 0, message.id]
     );
   }, [chatId]);
 

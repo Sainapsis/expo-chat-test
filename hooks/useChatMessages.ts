@@ -18,14 +18,15 @@ export function useChatMessages(chatId: string) {
 
   useEffect(() => {
     const handleNewMessage = async (newMessage: Message) => {
-      if (newMessage.senderName !== currentUser.name) {
+      if (newMessage.sender.id !== currentUser.id) {
+        // TODO: check if this logic is a good one taking into account that the user may have multiple devices and the app has a web version
         await addMessageToDb(newMessage, true);
         setMessages(await loadMessages());
       }
     };
 
     subscribeToNewMessages(handleNewMessage);
-  }, [subscribeToNewMessages, currentUser.name, addMessageToDb, loadMessages]);
+  }, [subscribeToNewMessages, currentUser.id, addMessageToDb, loadMessages]);
 
   useEffect(() => {
     syncUnsentMessages();
@@ -34,11 +35,14 @@ export function useChatMessages(chatId: string) {
   const sendMessage = useCallback(async (body: string) => {
     const optimisticMessage: Message = {
       id: Date.now().toString(),
-      senderId: currentUser.id, 
-      senderName: currentUser.name,
+      sender: {
+        id: currentUser.id,
+        name: currentUser.name,
+        avatar: currentUser.avatar,
+      },
       body,
       timestamp: new Date().toISOString(),
-      synced: false
+      synced: false,
     };
     await addMessageToDb(optimisticMessage, false);
     setMessages(await loadMessages());

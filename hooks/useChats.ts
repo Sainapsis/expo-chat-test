@@ -21,6 +21,7 @@ export function useChats() {
   }, [currentUser, refetch]);
 
   useEffect(() => {
+    console.info('useChats data:', data);
     if (data && data.chats) {
       setChats(data.chats);
     }

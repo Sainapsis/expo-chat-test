@@ -13,7 +13,7 @@ const typeDefs = gql`
   type Message {
     id: ID!
     chatId: ID!
-    senderId: ID! 
+    sender: User!
     body: String!
     timestamp: String!
   }
@@ -43,13 +43,21 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     messages: async (_, { chatId }) => {
-      return await db.all('SELECT * FROM messages WHERE chatId = ?', [chatId]);
+      const messages = await db.all('SELECT * FROM messages WHERE chatId = ?', [chatId]);
+      return Promise.all(messages.map(async (message) => {
+        const user = await db.get('SELECT * FROM users WHERE id = ?', [message.senderName]); // Fetch user details
+        return {
+          ...message,
+          sender: user, // Add the user object to the message
+        };
+      }));
     },
     availableUsers: async () => {
       return await db.all('SELECT * FROM users');
     },
     chats: async (_, { userId }) => {
       const chatsData = await db.all('SELECT * FROM chats WHERE id IN (SELECT chatId FROM messages WHERE senderName = ?)', [userId]);
+      console.log('chatsData:', chatsData, 'userId:', userId);
       return chatsData.map(chat => ({
         ...chat,
         users: chat.users.map(id => db.get('SELECT * FROM users WHERE id = ?', [id])),
@@ -58,14 +66,15 @@ const resolvers = {
   },
   Mutation: {
     sendMessage: async (_, { chatId, body, userId }) => {
+      const user = await db.get('SELECT * FROM users WHERE id = ?', [userId]); // Fetch user details
       const newMessage = {
         chatId,
-        senderId: userId,
+        sender: user, // Use the full user object
         body,
         timestamp: new Date().toISOString(),
       };
-      await db.run('INSERT INTO messages (chatId, senderId, body, timestamp) VALUES (?, ?, ?, ?)', 
-        [newMessage.chatId, newMessage.senderId, newMessage.body, newMessage.timestamp]);
+      await db.run('INSERT INTO messages (chatId, senderName, body, timestamp) VALUES (?, ?, ?, ?)', 
+        [newMessage.chatId, newMessage.sender.id, newMessage.body, newMessage.timestamp]);
       return newMessage;
     },
   },
@@ -133,8 +142,19 @@ async function seedDatabase() {
   }
 }
 
+async function logTableContents() {
+  const users = await db.all('SELECT * FROM users');
+  const messages = await db.all('SELECT * FROM messages');
+  const chats = await db.all('SELECT * FROM chats');
+
+  console.log('Users:', users);
+  console.log('Messages:', messages);
+  console.log('Chats:', chats);
+}
+
 async function startServer() {
   await initDatabase(); 
+  await logTableContents(); // Log the table contents after seeding
   const app = express();
   const server = new ApolloServer({ typeDefs, resolvers });
 

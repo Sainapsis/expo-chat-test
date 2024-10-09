@@ -1,21 +1,17 @@
-// User-related types
 export interface User {
   id: string;
   name: string;
   avatar: string;
 }
 
-// Message-related types
 export interface Message {
   id: string;
-  senderId: string;
-  senderName: string;
+  sender: User; 
   body: string;
   timestamp: string;
   synced: boolean;
 }
 
-// Chat-related types
 export interface ChatItem {
   id: string;
   users: User[];

@@ -15,9 +15,9 @@ export default function ChatScreen() {
   const renderMessage = ({ item }: { item: Message }) => (
     <ThemedView style={[
       styles.messageContainer,
-      item.senderName === currentUser.name ? styles.sentMessage : styles.receivedMessage
+      item.sender.id === currentUser.id ? styles.sentMessage : styles.receivedMessage
     ]}>
-      <ThemedText style={styles.sender}>{item.senderName}</ThemedText>
+      <ThemedText style={styles.sender}>{item.sender.name}</ThemedText>
       <ThemedText>{item.body}</ThemedText>
     </ThemedView>
   );
