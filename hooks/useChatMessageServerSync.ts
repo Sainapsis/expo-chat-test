@@ -3,6 +3,7 @@ import { useMutation } from '@apollo/client';
 import { SEND_MESSAGE_MUTATION } from '@/graphql/mutations';
 import { useChatMessageLocalDb } from './useChatMessageLocalDb';
 import { Message } from '@/types/types';
+
 export function useChatMessageServerSync(chatId: string) {
   const [sendMessageMutation] = useMutation(SEND_MESSAGE_MUTATION);
   const { getUnsyncedMessages, addMessageToDb } = useChatMessageLocalDb(chatId);
@@ -17,9 +18,15 @@ export function useChatMessageServerSync(chatId: string) {
         await addMessageToDb(data.sendMessage, true);
       } catch (error) {
         console.error('Failed to sync message:', error);
+        if (error.networkError) {
+          console.error('Network error details:', error.networkError);
+        }
+        if (error.graphQLErrors) {
+          console.error('GraphQL errors:', error.graphQLErrors);
+        }
       }
     }
-  }, [chatId, sendMessageMutation, addMessageToDb]);
+  }, [chatId, sendMessageMutation, addMessageToDb, getUnsyncedMessages]);
 
   return { syncUnsentMessages };
 }

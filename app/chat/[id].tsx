@@ -12,15 +12,20 @@ export default function ChatScreen() {
   const { messages, sendMessage, currentUser } = useChatMessages(chatId);
   const [inputMessage, setInputMessage] = useState('');
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <ThemedView style={[
-      styles.messageContainer,
-      item.sender.id === currentUser.id ? styles.sentMessage : styles.receivedMessage
-    ]}>
-      <ThemedText style={styles.sender}>{item.sender.name}</ThemedText>
-      <ThemedText>{item.body}</ThemedText>
-    </ThemedView>
-  );
+  const renderMessage = ({ item }: { item: Message | undefined }) => {
+    if (!item || !item.sender) {
+      return null; // TODO: improve this or return a placeholder component
+    }
+    return (
+      <ThemedView style={[
+        styles.messageContainer,
+        item.sender.id === currentUser.id ? styles.sentMessage : styles.receivedMessage
+      ]}>
+        <ThemedText style={styles.sender}>{item.sender.name}</ThemedText>
+        <ThemedText>{item.body}</ThemedText>
+      </ThemedView>
+    );
+  };
 
   const handleSendMessage = () => {
     if (inputMessage.trim()) {
