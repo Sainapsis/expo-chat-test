@@ -4,8 +4,10 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useRouter } from 'expo-router';
 import { ChatItem } from '@/types/types';
+import { useCurrentUserStore } from '@/store/useCurrentUserStore';
 
 export default function ChatList() {
+  const { currentUser } = useCurrentUserStore();
   const { chats, loading, error } = useChats();
   const router = useRouter();
 
@@ -19,7 +21,7 @@ export default function ChatList() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ThemedView style={styles.container}>
-        <ThemedText type="title" style={styles.title}>Chats</ThemedText>
+        <ThemedText type="title" style={styles.title}>Chats from {currentUser.name}</ThemedText>
         <FlatList<ChatItem>
           data={chats}
           keyExtractor={(item) => item.id}
