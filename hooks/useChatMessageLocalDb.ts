@@ -3,17 +3,18 @@ import * as SQLite from 'expo-sqlite';
 import { Message } from '@/types/types';
 
 const db = SQLite.openDatabaseAsync('chat.db');
-const DB_VERSION = 2; // Increment this when you change the table structure
+const DB_VERSION = 2;
 
 export function useChatMessageLocalDb(chatId: string) {
   const initializeChatTable = useCallback(async () => {
     const database = await db;
     
     // Check current database version
-    const versionResult = await database.getFirstAsync<{ version: number }>(
+    const versionResult = await database.getFirstAsync<{ user_version: number }>(
       'PRAGMA user_version'
     );
-    const currentVersion = versionResult?.version || 0;
+    console.log('Database current version:', versionResult, versionResult);
+    const currentVersion = versionResult?.user_version || 0;
     if (currentVersion < DB_VERSION) {
       console.log('Migrating database from version', currentVersion, 'to', DB_VERSION);
         await database.execAsync('DROP TABLE IF EXISTS messages');
@@ -29,7 +30,10 @@ export function useChatMessageLocalDb(chatId: string) {
           )
         `);
         await database.execAsync(`PRAGMA user_version = ${DB_VERSION}`);
-        console.log(`Database migrated from version ${currentVersion} to ${DB_VERSION}`);
+        const versionupdateResult = await database.getFirstAsync<{ version: number }>(
+          'PRAGMA user_version'
+        );
+        console.log('Database migrated from version', currentVersion, 'to', versionupdateResult);
     }else{
       console.log('Database is up to date:', currentVersion);
     }

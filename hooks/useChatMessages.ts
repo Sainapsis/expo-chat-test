@@ -22,11 +22,8 @@ export function useChatMessages(chatId: string) {
         console.log('Truncating messages before loading');
         await truncateMessages();
       }
-      console.log('Now loading messages');
       loadMessages().then(loadedMessages => {
-        console.log('Messages loaded:', loadedMessages);
         setMessages(loadedMessages);
-        console.log('Messages state updated');
       });
     });
   }, [initializeChatTable, loadMessages, truncateMessages]);
