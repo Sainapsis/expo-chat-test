@@ -6,6 +6,7 @@ export interface User {
 
 export interface Message {
   id: string;
+  chatId: string;
   senderId: string;
   body: string;
   timestamp: string;

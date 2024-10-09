@@ -32,7 +32,7 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    sendMessage(chatId: ID!, body: String!): Message!
+    sendMessage(chatId: ID!, senderId: ID!, body: String!, timestamp: String!): Message!
   }
 
   type Subscription {
@@ -83,13 +83,13 @@ const resolvers = {
     },
   },
   Mutation: {
-    sendMessage: async (_, { chatId, body }, { userId }) => {
-      console.log('Received sendMessage request:', { chatId, body, userId });
+    sendMessage: async (_, { chatId, senderId, body, timestamp }) => {
+      console.log('Received sendMessage request:', { chatId, senderId, body, timestamp });
       const newMessage = {
         chatId,
-        senderId: userId,
+        senderId,
         body,
-        timestamp: new Date().toISOString(),
+        timestamp,
       };
       try {
         const result = await db.run('INSERT INTO messages (chatId, senderId, body, timestamp) VALUES (?, ?, ?, ?)', 

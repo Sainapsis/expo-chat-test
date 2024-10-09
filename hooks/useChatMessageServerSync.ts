@@ -11,9 +11,15 @@ export function useChatMessageServerSync(chatId: string) {
   const syncUnsentMessages = useCallback(async () => {
     const unsentMessages = await getUnsyncedMessages();
     for (const message of unsentMessages) {
+      console.log('Syncing message:', message);
       try {
         const { data } = await sendMessageMutation({
-          variables: { chatId, body: message.body },
+          variables: { 
+            chatId: message.chatId, 
+            body: message.body,
+            senderId: message.senderId,
+            timestamp: message.timestamp
+          },
         });
         if (data && data.sendMessage) {
           await updateMessageSyncStatus(message.id, true);
