@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { ChatItem } from '@/types/types';
 import { useCurrentUserStore } from '@/store/useCurrentUserStore';
 
+//TODO: check if having the index.tsx in the app/(tabs) folder in the first level is correct or if it should be in the app/(tabs)/chatList folder
 export default function ChatList() {
   const { currentUser } = useCurrentUserStore();
   const { chats, loading, error } = useChats();

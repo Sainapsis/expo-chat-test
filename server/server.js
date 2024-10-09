@@ -45,10 +45,10 @@ const resolvers = {
     messages: async (_, { chatId }) => {
       const messages = await db.all('SELECT * FROM messages WHERE chatId = ?', [chatId]);
       return Promise.all(messages.map(async (message) => {
-        const user = await db.get('SELECT * FROM users WHERE id = ?', [message.senderName]); // Fetch user details
+        const user = await db.get('SELECT * FROM users WHERE id = ?', [message.senderName]);
         return {
           ...message,
-          sender: user, // Add the user object to the message
+          sender: user,
         };
       }));
     },
@@ -56,30 +56,30 @@ const resolvers = {
       return await db.all('SELECT * FROM users');
     },
     chats: async (_, { userId }) => {
-      const chatsData = await db.all(`
-        SELECT c.id, c.lastMessage, c.timestamp, u.id AS userId, u.name, u.avatar
+      // First, get all chats for the user
+      const userChats = await db.all(`
+        SELECT DISTINCT c.id, c.lastMessage, c.timestamp
         FROM chat_users cu
         JOIN chats c ON cu.chatId = c.id
-        JOIN users u ON cu.userId = u.id
         WHERE cu.userId = ?
       `, [userId]);
-      console.log('chatsData:', chatsData, 'userId:', userId);
 
-      const groupedChats = chatsData.reduce((acc, chat) => {
-        const { id, lastMessage, timestamp, userId, name, avatar } = chat;
-        if (!acc[id]) {
-          acc[id] = {
-            id,
-            lastMessage,
-            timestamp,
-            users: [],
-          };
-        }
-        acc[id].users.push({ id: userId, name, avatar });
-        return acc;
-      }, {});
+      // Then, for each chat, get all users
+      const chatsWithUsers = await Promise.all(userChats.map(async (chat) => {
+        const users = await db.all(`
+          SELECT u.id, u.name, u.avatar
+          FROM chat_users cu
+          JOIN users u ON cu.userId = u.id
+          WHERE cu.chatId = ?
+        `, [chat.id]);
 
-      return Object.values(groupedChats);
+        return {
+          ...chat,
+          users
+        };
+      }));
+
+      return chatsWithUsers;
     },
   },
   Mutation: {
@@ -161,6 +161,9 @@ async function seedDatabase() {
   const chatUsersData = [
     { chatId: '1', userId: '1' },
     { chatId: '1', userId: '2' },
+    { chatId: '1', userId: '3' },
+    { chatId: '1', userId: '4' },
+    { chatId: '1', userId: '5' },
     { chatId: '2', userId: '1' },
     { chatId: '2', userId: '3' },
     { chatId: '3', userId: '2' },
@@ -189,9 +192,9 @@ async function logTableContents() {
   const chat_users = await db.all('SELECT * FROM chat_users');
   const chats = await db.all('SELECT * FROM chats');
 
-  console.log('Users:', users);
-  console.log('chat_users:', chat_users);
-  console.log('Chats:', chats);
+  //console.log('Users:', users);
+  //console.log('chat_users:', chat_users);
+  //console.log('Chats:', chats);
 }
 
 async function startServer() {
