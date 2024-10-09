@@ -47,8 +47,11 @@ const resolvers = {
       return Promise.all(messages.map(async (message) => {
         const user = await db.get('SELECT * FROM users WHERE id = ?', [message.senderName]);
         return {
-          ...message,
+          id: message.id.toString(), // Ensure id is a string
+          chatId: message.chatId,
           sender: user,
+          body: message.body,
+          timestamp: message.timestamp,
         };
       }));
     },
@@ -83,22 +86,38 @@ const resolvers = {
     },
   },
   Mutation: {
-    sendMessage: async (_, { chatId, body, userId }) => {
-      const user = await db.get('SELECT * FROM users WHERE id = ?', [userId]); // Fetch user details
+    sendMessage: async (_, { chatId, body }, { userId }) => {
+      console.log('Received sendMessage request:', { chatId, body, userId });
+      const user = await db.get('SELECT * FROM users WHERE id = ?', [userId]);
+      if (!user) {
+        console.error('User not found:', userId);
+        throw new Error('User not found');
+      }
       const newMessage = {
         chatId,
-        sender: user, // Use the full user object
+        sender: user,
         body,
         timestamp: new Date().toISOString(),
       };
-      await db.run('INSERT INTO messages (chatId, senderName, body, timestamp) VALUES (?, ?, ?, ?)', 
-        [newMessage.chatId, newMessage.sender.id, newMessage.body, newMessage.timestamp]);
-      return newMessage;
+      try {
+        const result = await db.run('INSERT INTO messages (chatId, senderName, body, timestamp) VALUES (?, ?, ?, ?)', 
+          [newMessage.chatId, newMessage.sender.id, newMessage.body, newMessage.timestamp]);
+        console.log('Message inserted successfully');
+        newMessage.id = result.lastID.toString(); // Add the generated id to the newMessage object
+        return newMessage;
+      } catch (error) {
+        console.error('Error inserting message:', error);
+        throw new Error('Failed to insert message');
+      }
     },
   },
   Subscription: {
     newMessage: {
-      subscribe: (_, { chatId }, { pubsub }) => pubsub.asyncIterator(`NEW_MESSAGE_${chatId}`),
+      subscribe: (_, { chatId }, { pubsub }) => {
+        // Implement the logic to publish new messages
+        // This is just a placeholder and needs to be properly implemented
+        return pubsub.asyncIterator(`NEW_MESSAGE_${chatId}`);
+      },
     },
   },
 };
@@ -199,9 +218,18 @@ async function logTableContents() {
 
 async function startServer() {
   await initDatabase(); 
-  await logTableContents(); // Log the table contents after seeding
+  await logTableContents();
   const app = express();
-  const server = new ApolloServer({ typeDefs, resolvers });
+  
+  const server = new ApolloServer({ 
+    typeDefs, 
+    resolvers,
+    context: ({ req }) => {
+      // Add user authentication logic here
+      // For now, we'll just use a mock user ID
+      return { userId: '1' };
+    },
+  });
 
   await server.start();
   server.applyMiddleware({ app });
