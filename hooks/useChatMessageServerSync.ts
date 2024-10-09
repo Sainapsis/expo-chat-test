@@ -6,7 +6,7 @@ import { Message } from '@/types/types';
 
 export function useChatMessageServerSync(chatId: string) {
   const [sendMessageMutation] = useMutation(SEND_MESSAGE_MUTATION);
-  const { getUnsyncedMessages, addMessageToDb } = useChatMessageLocalDb(chatId);
+  const { getUnsyncedMessages, updateMessageSyncStatus } = useChatMessageLocalDb(chatId);
 
   const syncUnsentMessages = useCallback(async () => {
     const unsentMessages = await getUnsyncedMessages();
@@ -15,18 +15,14 @@ export function useChatMessageServerSync(chatId: string) {
         const { data } = await sendMessageMutation({
           variables: { chatId, body: message.body },
         });
-        await addMessageToDb(data.sendMessage, true);
+        if (data && data.sendMessage) {
+          await updateMessageSyncStatus(message.id, true);
+        }
       } catch (error) {
         console.error('Failed to sync message:', error);
-        if (error.networkError) {
-          console.error('Network error details:', error.networkError);
-        }
-        if (error.graphQLErrors) {
-          console.error('GraphQL errors:', error.graphQLErrors);
-        }
       }
     }
-  }, [chatId, sendMessageMutation, addMessageToDb, getUnsyncedMessages]);
+  }, [chatId, sendMessageMutation, getUnsyncedMessages, updateMessageSyncStatus]);
 
   return { syncUnsentMessages };
 }

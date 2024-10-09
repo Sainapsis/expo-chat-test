@@ -36,6 +36,14 @@ export function useChatMessageLocalDb(chatId: string) {
     );
   }, [chatId]);
 
+  const updateMessageSyncStatus = useCallback(async (messageId: string, synced: boolean) => {
+    const database = await db;
+    await database.runAsync(
+      'UPDATE messages SET synced = ? WHERE id = ?',
+      [synced ? 1 : 0, messageId]
+    );
+  }, []);
+
   const getUnsyncedMessages = useCallback(async () => {
     const database = await db;
     return await database.getAllAsync<Message>(
@@ -44,5 +52,12 @@ export function useChatMessageLocalDb(chatId: string) {
     );
   }, [chatId]);
 
-  return { initializeChatTable, loadMessages, addMessageToDb, updateMessageInDb, getUnsyncedMessages };
+  return { 
+    initializeChatTable, 
+    loadMessages, 
+    addMessageToDb, 
+    updateMessageInDb, 
+    getUnsyncedMessages,
+    updateMessageSyncStatus // Add this new function to the return object
+  };
 }

@@ -17,16 +17,20 @@ export function useChatMessages(chatId: string) {
   }, [initializeChatTable, loadMessages]);
 
   useEffect(() => {
-    const handleNewMessage = async (newMessage: Message) => {
+    const unsubscribe = subscribeToNewMessages((newMessage: Message) => {
       if (newMessage.sender.id !== currentUser.id) {
-        // TODO: check if this logic is a good one taking into account that the user may have multiple devices and the app has a web version
-        await addMessageToDb(newMessage, true);
-        setMessages(await loadMessages());
+        addMessageToDb(newMessage, true).then(() => {
+          setMessages(prevMessages => [...prevMessages, newMessage]);
+        });
+      }
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
       }
     };
-
-    subscribeToNewMessages(handleNewMessage);
-  }, [subscribeToNewMessages, currentUser.id, addMessageToDb, loadMessages]);
+  }, [subscribeToNewMessages, currentUser.id, addMessageToDb]);
 
   useEffect(() => {
     syncUnsentMessages();
@@ -35,18 +39,15 @@ export function useChatMessages(chatId: string) {
   const sendMessage = useCallback(async (body: string) => {
     const optimisticMessage: Message = {
       id: Date.now().toString(),
-      sender: {
-        id: currentUser.id,
-        name: currentUser.name,
-        avatar: currentUser.avatar,
-      },
+      sender: currentUser,
       body,
       timestamp: new Date().toISOString(),
       synced: false,
     };
     await addMessageToDb(optimisticMessage, false);
-    setMessages(await loadMessages());
-  }, [currentUser, addMessageToDb, loadMessages]);
+    setMessages(prevMessages => [...prevMessages, optimisticMessage]);
+    await syncUnsentMessages();
+  }, [currentUser, addMessageToDb, syncUnsentMessages]);
 
   return { messages, sendMessage, currentUser };
 }
