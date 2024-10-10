@@ -16,7 +16,6 @@ export function useChats() {
   useEffect(() => {
     if (currentUser?.id) {
       refetch({ userId: currentUser.id });
-      console.info('refetching chats from useEffect for user:', currentUser.id);
     }
   }, [currentUser, refetch]);
 

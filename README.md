@@ -24,6 +24,15 @@ Note: you do not necesarely need to finish them all, make the ones you see fit d
 2. Improve the structure of the hooks (grouping them better in folders or somehow make changes that will allow the project to scale in the lng term), document them
 3. Create native handle of push notifications that uses best practices in chat push notifications handling (for example in android: https://developer.android.com/develop/ui/views/notifications/conversations?hl=es-419)
 4. Create the posibility to attach images from the chat by seecting them from the galery of the device with a native module that handles image compresionfor a previsualization before sending and storyng both original and preview in the app local storage for offline optimistic aprroach (if you feel like it, add the server side code to store the images and check that other users get notified)
+5. Allow a replyTo message feature in the chat so that the user can reply to a message directly.
+6. Check the TODOs and pain points you can identify arround the code and solve the most painfull if you where to send the app to production. this intended to showcase your prioritization skills as well as your ability to solve problems in the real world. Document them in a TXT or similar for us to know your resoning and where should we look to check your work.
+7. (a good optional challenge for seniors) analize the sync process of the chat messages and improve it taking in account that the the devices disk space is limited. Also take care of the memory usage of the app with the imeages, files and other resources that may be referenced in the device RAM By making sure that they lieve in the device RAM only when needed.
 
+
+NOTES: 
+- if you have any questions please reach out to the email provided in the test.
+- For Senior or Semi Senior applicants its important that you solve at least one of the points 1 or 2 to check basic code architecture decisions,  another of the points 3,4 to check your knowledge in native modules and at least one of the points 5,6 to check your problem solving skills. point 7 is an important challenge for seniors, if you dont have time to tacle it, please be prepared to explain how would you aproach it that challenge in a real life project in the interview.
+- For Junior applicants its important that you solve at least one of the points 1,2 for code architecture and one of the points 5,6 to check your problem solving skills.
+- that said, if you have time and want to show us more, please go ahead and do so, we value that and it will be taken into account.
 
 

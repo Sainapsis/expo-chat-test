@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useSubscription } from '@apollo/client';
 import { NEW_MESSAGE_SUBSCRIPTION } from '@/graphql/subscriptions';
 import { Message } from '@/types/types';
@@ -9,9 +9,13 @@ export function useChatMessageSubscription(chatId: string) {
   });
 
   const subscribeToNewMessages = useCallback((onNewMessage: (message: Message) => void) => {
-    if (data && data.newMessage) {
-      onNewMessage(data.newMessage);
-    }
+    const subscription = () => {
+      if (data && data.newMessage) {
+        onNewMessage(data.newMessage);
+      }
+    };
+
+    return subscription;
   }, [data]);
 
   return { subscribeToNewMessages, loading, error };

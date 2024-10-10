@@ -24,3 +24,19 @@ export const GET_AVAILABLE_USERS = gql`
     }
   }
 `;
+
+export const GET_CHAT_MESSAGES = gql`
+  query GetChatMessages($chatId: ID!) {
+    messages(chatId: $chatId) {
+      id
+      chatId
+      sender {
+        id
+        name
+        avatar
+      }
+      body
+      timestamp
+    }
+  }
+`;

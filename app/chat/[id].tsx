@@ -3,6 +3,7 @@ import { StyleSheet, SafeAreaView, FlatList, KeyboardAvoidingView, Platform, Tex
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useChatMessages } from '@/hooks/useChatMessages';
+import { useUsers } from '@/hooks/useUsers';
 import { Message } from '@/types/types';
 import { useState } from 'react';
 
@@ -10,17 +11,31 @@ export default function ChatScreen() {
   const { id } = useLocalSearchParams();
   const chatId = Array.isArray(id) ? id[0] : id;
   const { messages, sendMessage, currentUser } = useChatMessages(chatId);
+  const { getUserName } = useUsers();
   const [inputMessage, setInputMessage] = useState('');
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <ThemedView style={[
-      styles.messageContainer,
-      item.senderName === currentUser.name ? styles.sentMessage : styles.receivedMessage
-    ]}>
-      <ThemedText style={styles.sender}>{item.senderName}</ThemedText>
-      <ThemedText>{item.body}</ThemedText>
-    </ThemedView>
-  );
+  const renderMessage = ({ item }: { item: Message | undefined }) => {
+    if (!item) {
+      return (
+        <ThemedView style={styles.placeholderContainer}>
+          <ThemedText style={styles.placeholderText}>Message unavailable</ThemedText>
+        </ThemedView>
+      );
+    }
+
+    const senderName = getUserName(item.senderId);
+    const messageBody = item.body || 'No message content';
+
+    return (
+      <ThemedView style={[
+        styles.messageContainer,
+        item.senderId === currentUser.id ? styles.sentMessage : styles.receivedMessage
+      ]}>
+        <ThemedText style={styles.sender}>{senderName}</ThemedText>
+        <ThemedText>{messageBody}</ThemedText>
+      </ThemedView>
+    );
+  };
 
   const handleSendMessage = () => {
     if (inputMessage.trim()) {
@@ -121,5 +136,16 @@ const styles = StyleSheet.create({
   receivedMessage: {
     alignSelf: 'flex-start',
     backgroundColor: '#FFFFFF',
+  },
+  placeholderContainer: {
+    padding: 8,
+    marginBottom: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    alignSelf: 'center',
+  },
+  placeholderText: {
+    color: '#999',
+    fontStyle: 'italic',
   },
 });
